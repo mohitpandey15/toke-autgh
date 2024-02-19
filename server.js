@@ -3,22 +3,24 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const session = require('express-session');
-
+var cookieParser = require("cookie-parser"); // Install Cookie Parse by: npm i cookie-parser
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SECRET_KEY = 'your_secret_key';
 const SESSION_SECRET = 'Xp/UAw5I0Adcttq188Sy/EbkIX0lzad7qogH6dwugqI=';
 
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
 // Configure express-session middleware
+app.use(cookieParser());
 app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false } // Set secure to true if using HTTPS
 }));
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
 
 // User data (replace with your own user data logic)
 const users = [
@@ -32,6 +34,11 @@ function findUser(username, password) {
 }
 
 // Endpoint for user authentication
+
+app.get('/logout', (req, res) => {
+   req.session.destroy((err) => res.redirect("/"));
+});
+
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     // Find user by username and password
@@ -40,6 +47,7 @@ app.post('/login', (req, res) => {
         // Generate JWT token
         const token = jwt.sign({ username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '1h' });
         // Set session data
+        req.session.authorised  = true;
         req.session.user = user;
         // Redirect to home page
         res.redirect('/home');
